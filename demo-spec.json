@@ -1,10 +1,11 @@
 {
     "name": "DemoPoA",
     "engine": {
-        "authorityRound": {
+        "ouroboros": {
             "params": {
                 "gasLimitBoundDivisor": "0x400",
-                "stepDuration": "5",
+                "stepDuration": "20",
+                "securityParameterK": "60",
                 "validators" : {
                     "list": [
                         "0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e",
@@ -21,7 +22,7 @@
     },
     "genesis": {
         "seal": {
-            "authorityRound": {
+            "ouroboros": {
                 "step": "0x0",
                 "signature": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
             }
