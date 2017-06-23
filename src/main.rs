@@ -12,7 +12,7 @@ use std::fs::File;
 
 use clap::{Arg, App};
 use serde::Serialize;
-use rand::SeedableRng;
+use rand::{Rng, SeedableRng};
 use rand::distributions::{IndependentSample, Range};
 
 static JSONRPC_VERSION: &str = "2.0";
@@ -177,13 +177,12 @@ fn main() {
 
     let (mut accounts, passwords) = parse_config_file(&config_file);
 
-    let mut rng = match matches.value_of("seed") {
-        Some(seed) => {
-            let seed = seed.parse().expect("Unable to parse seed");
-            rand::StdRng::from_seed(&[seed])
-        }
-        None => rand::StdRng::new().expect("Unable to generate RNG"),
-    };
+    let seed =
+        matches.value_of("seed")
+        .map(|s| s.parse().expect("Unable to parse seed"))
+        .unwrap_or_else(|| rand::thread_rng().gen());
+
+    let mut rng = rand::StdRng::from_seed(&[seed]);
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
@@ -200,6 +199,7 @@ fn main() {
     let output = File::create(output_file).expect("Unable to create output file");
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
 
+    println!("Used seed {}", seed);
     println!("RPC body written to {}", output_file);
     println!("Final Balances:");
     for account in &accounts {
