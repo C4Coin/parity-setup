@@ -1,6 +1,6 @@
 [package]
 authors = ["Jake Goulding <jake.goulding@gmail.com>"]
-name = "parity-dummy"
+name = "parity-rpc-generator"
 version = "0.1.0"
 
 [dependencies]
