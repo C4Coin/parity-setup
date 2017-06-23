@@ -1,3 +1,4 @@
+extern crate clap;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
@@ -8,6 +9,7 @@ extern crate rand;
 use std::collections::HashMap;
 use std::cmp::{min, max};
 
+use clap::{Arg, App};
 use serde::Serialize;
 use rand::distributions::{IndependentSample, Range};
 
@@ -108,6 +110,19 @@ where
 }
 
 fn main() {
+    let matches = App::new("RPC generator")
+        .arg(Arg::with_name("transactions")
+             .long("transactions")
+             .value_name("N")
+             .takes_value(true))
+        .get_matches();
+
+    let count =
+        matches.value_of("transactions")
+        .unwrap_or("10")
+        .parse()
+        .expect("transactions must be a number");
+
     let mut rng = rand::thread_rng();
 
     let passwords = [
@@ -134,7 +149,7 @@ fn main() {
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
-        .take(10)
+        .take(count)
         .enumerate()
         .map(|(id, (from, to, value))| {
             let password = passwords[&from];
