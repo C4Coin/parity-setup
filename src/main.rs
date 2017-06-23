@@ -8,6 +8,7 @@ extern crate rand;
 
 use std::collections::HashMap;
 use std::cmp::{min, max};
+use std::fs::File;
 
 use clap::{Arg, App};
 use serde::Serialize;
@@ -37,10 +38,10 @@ impl PersonalSendTransaction {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
-struct Password(&'static str);
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+struct Password(String);
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 struct AccountId(String);
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -109,52 +110,70 @@ where
     }
 }
 
+//struct StringNumber(String)
+
+#[derive(Debug, Clone, Deserialize)]
+struct AccountConfig {
+    id: AccountId,
+    balance: String,
+    password: Password,
+}
+
+fn parse_config_file(config_file: &str) -> (Vec<Account>, HashMap<AccountId, Password>) {
+    let config_file = File::open(config_file).expect("Config file not found");
+    let config: Vec<AccountConfig> =
+        serde_json::from_reader(config_file).expect("Unable to parse config file");
+
+    let passwords =
+        config.iter()
+        .map(|conf| (conf.id.clone(), conf.password.clone()))
+        .collect();
+
+    let accounts =
+        config.into_iter()
+        .map(|conf| {
+            Account {
+                id: conf.id,
+                balance: conf.balance.parse().expect("Unable to parse balance"),
+            }
+        })
+        .collect();
+
+    (accounts, passwords)
+}
+
 fn main() {
     let matches = App::new("RPC generator")
+        .arg(Arg::with_name("config")
+             .long("config")
+             .value_name("FILE.json")
+             .takes_value(true))
         .arg(Arg::with_name("transactions")
              .long("transactions")
              .value_name("N")
              .takes_value(true))
         .get_matches();
 
+    let config_file = matches.value_of("config").expect("Must provide config file");
+
     let count =
         matches.value_of("transactions")
-        .unwrap_or("10")
+        .unwrap()
         .parse()
         .expect("transactions must be a number");
 
+    let (mut accounts, passwords) = parse_config_file(&config_file);
+
     let mut rng = rand::thread_rng();
-
-    let passwords = [
-        ("a", "cat"),
-        ("b", "dog"),
-    ];
-
-    let passwords: HashMap<_, _> =
-        passwords
-        .iter()
-        .map(|&(id, pass)| (AccountId(id.into()), pass))
-        .collect();
-
-    let mut accounts = vec![
-        Account {
-            id: AccountId("a".into()),
-            balance: 1_000_000,
-        },
-        Account {
-            id: AccountId("b".into()),
-            balance: 1_000_000,
-        },
-    ];
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
         .take(count)
         .enumerate()
         .map(|(id, (from, to, value))| {
-            let password = passwords[&from];
+            let password = passwords[&from].clone();
             let transaction = Transaction { from, to, value: format!("0x{:x}", value) };
-            let params = PersonalSendTransactionParams(transaction, Password(password));
+            let params = PersonalSendTransactionParams(transaction, password);
             PersonalSendTransaction::new(params, id)
         })
         .collect();
@@ -180,7 +199,7 @@ mod test {
             value: value.into(),
         };
 
-        let params = PersonalSendTransactionParams(transaction, Password("user"));
+        let params = PersonalSendTransactionParams(transaction, Password("user".into()));
 
         let rpc = vec![
             PersonalSendTransaction::new(params, 0),
