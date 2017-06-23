@@ -100,6 +100,7 @@ where
 
             let (src, dest) = if self.rng.gen() { (a, b) } else { (b, a) };
 
+            if src.balance == 0 { continue }
             let money = self.rng.gen_range(0, src.balance);
             if money == 0 { continue }
 
