@@ -183,6 +183,7 @@ fn main() {
         .unwrap_or_else(|| rand::thread_rng().gen());
 
     let mut rng = rand::StdRng::from_seed(&[seed]);
+    println!("Used seed {}", seed);
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
@@ -199,7 +200,6 @@ fn main() {
     let output = File::create(output_file).expect("Unable to create output file");
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
 
-    println!("Used seed {}", seed);
     println!("RPC body written to {}", output_file);
     println!("Final Balances:");
     for account in &accounts {
