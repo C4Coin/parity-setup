@@ -1,0 +1,13 @@
+[
+    {
+        "id": "0x00Aa39d30F0D20FF03a22cCfc30B7EfbFca597C2",
+        "balance": "1000000",
+        "password": "node1"
+    },
+    {
+        "id": "0x004ec07d2329997267Ec62b4166639513386F32E",
+        "balance": "1000000",
+        "password": "user"
+
+    }
+]
