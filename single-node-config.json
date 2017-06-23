@@ -4,7 +4,7 @@
         "ouroboros": {
             "params": {
                 "gasLimitBoundDivisor": "0x400",
-                "stepDuration": "20",
+                "stepDuration": "5",
                 "securityParameterK": "60",
                 "validators" : {
                     "list": [
