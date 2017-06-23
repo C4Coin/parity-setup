@@ -68,6 +68,8 @@ to generate transaction JSON requests.
     curl --data @/absolute/path/to/rpc.json -H "Content-Type: application/json" -X POST localhost:8541
     ```
 
+## Viewing blocks
+
 - In the parity logs, you should see transactions being mined and the number of blocks going up. The number of the last block is near the beginning of each line. Example of mining block #7:
 
     ```
