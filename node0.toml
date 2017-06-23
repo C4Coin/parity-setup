@@ -1,5 +1,5 @@
 [parity]
-chain = "demo-spec.json"
+chain = "ouroboros-demo-spec.json"
 base_path = "/tmp/parity0"
 [network]
 port = 30300
