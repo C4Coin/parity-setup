@@ -4,6 +4,12 @@ These instructions are modeled from [the parity demo PoA
 tutorial](https://github.com/paritytech/parity/wiki/Demo-PoA-tutorial) and customized for running
 the Ouroboros protocol in a variety of situations for experimental setup.
 
+## Build Parity
+
+- Install Rust 1.18.0 using https://rustup.rs/.
+- Check out the ouroboros branch of the parity fork: https://github.com/input-output-hk/parity/tree/ouroboros
+- Compile in release mode: `cargo build --release`. The resulting binary will be `target/release/parity`.
+
 ## Parity RPC generator
 
 You will also need to check out and `cargo build` the
@@ -12,7 +18,6 @@ to generate transaction JSON requests.
 
 ## Single node setup
 
-- Compile parity and have the binary in your `$PATH`.
 - Start parity in order to create an account using `parity --config single-node-initial.toml`
 - Create the validator/stakeholder account:
 
