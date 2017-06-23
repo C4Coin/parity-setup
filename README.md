@@ -70,7 +70,13 @@ to generate transaction JSON requests.
 
 ## Viewing blocks
 
-- In the parity logs, you should see transactions being mined and the number of blocks going up. The number of the last block is near the beginning of each line. Example of mining block #7:
+- In the parity logs, you should see transactions being mined, which looks like:
+
+    ```
+    2017-06-23 14:14:40  Transaction mined (hash fb8b6a122d4a2a77550ace5564fb613501e92b4f3d5e2bc1fb7bb8175f27d826)
+    ```
+
+- The number of blocks should go up. The number of the last block is near the beginning of each line. Example of mining block #7:
 
     ```
     2017-06-23 13:46:37  Syncing       #6 78d8…bf6f     0 blk/s // etc...
