@@ -67,3 +67,16 @@ to generate transaction JSON requests.
     ```
     curl --data @/absolute/path/to/rpc.json -H "Content-Type: application/json" -X POST localhost:8541
     ```
+
+- In the parity logs, you should see transactions being mined and the number of blocks going up. The number of the last block is near the beginning of each line. Example of mining block #7:
+
+    ```
+    2017-06-23 13:46:37  Syncing       #6 78d8…bf6f     0 blk/s // etc...
+    2017-06-23 13:46:47  Syncing       #7 068b…eb29     0 blk/s // etc...
+    ```
+
+- You can see the last block that was mined by requesting it via the API:
+
+    ```
+    curl --data '{"method":"eth_getBlockByNumber","params":["latest",true],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST localhost:8541
+    ```
