@@ -202,7 +202,7 @@ fn main() {
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
 
     println!("RPC body written to {}", output_file);
-    println!("Final Balances:");
+    println!("Final balances after {} transactions:", count);
     for account in &accounts {
         println!("{}:\t{}", account.id.0, account.balance);
     }
