@@ -5,10 +5,10 @@ extern crate serde_json;
 
 extern crate rand;
 
+use std::collections::HashMap;
 use std::cmp::{min, max};
 
 use serde::Serialize;
-use rand::SeedableRng;
 use rand::distributions::{IndependentSample, Range};
 
 static JSONRPC_VERSION: &str = "2.0";
@@ -38,7 +38,7 @@ impl PersonalSendTransaction {
 #[derive(Debug, Clone, PartialEq, Serialize)]
 struct Password(&'static str);
 
-#[derive(Debug, Clone, PartialEq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize)]
 struct AccountId(String);
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -107,63 +107,110 @@ where
     }
 }
 
-#[test]
-fn like_the_wiki() {
-    let from = AccountId("0x004ec07d2329997267Ec62b4166639513386F32E".into());
-    let to = AccountId("0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e".into());
-    let value = "0xde0b6b3a7640000";
+fn main() {
+    let mut rng = rand::thread_rng();
 
-    let transaction = Transaction {
-        from: from,
-        to: to,
-        value: value.into(),
-    };
-
-    let params = PersonalSendTransactionParams(transaction, Password("user"));
-
-    let rpc = vec![
-        PersonalSendTransaction::new(params, 0),
+    let passwords = [
+        ("a", "cat"),
+        ("b", "dog"),
     ];
 
-    let actual = serde_json::to_string(&rpc).unwrap();
-
-    let expected = r#"[{"jsonrpc":"2.0","method":"personal_sendTransaction","params":[{"from":"0x004ec07d2329997267Ec62b4166639513386F32E","to":"0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e","value":"0xde0b6b3a7640000"},"user"],"id":0}]"#;
-    assert_eq!(actual, expected);
-}
-
-#[test]
-fn random_transactions() {
-    let mut rng = rand::isaac::Isaac64Rng::from_seed(&[1,2,3,4]);
+    let passwords: HashMap<_, _> =
+        passwords
+        .iter()
+        .map(|&(id, pass)| (AccountId(id.into()), pass))
+        .collect();
 
     let mut accounts = vec![
         Account {
             id: AccountId("a".into()),
-            balance: 1000,
+            balance: 1_000_000,
         },
         Account {
             id: AccountId("b".into()),
-            balance: 1000,
+            balance: 1_000_000,
         },
     ];
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
         .take(10)
+        .enumerate()
+        .map(|(id, (from, to, value))| {
+            let password = passwords[&from];
+            let transaction = Transaction { from, to, value: format!("0x{:x}", value) };
+            let params = PersonalSendTransactionParams(transaction, Password(password));
+            PersonalSendTransaction::new(params, id)
+        })
         .collect();
 
-    assert_eq!(
-        transactions,
-        [
-            (AccountId("a".into()), AccountId("b".into()), 594),
-            (AccountId("b".into()), AccountId("a".into()), 1300),
-            (AccountId("b".into()), AccountId("a".into()), 24),
-            (AccountId("a".into()), AccountId("b".into()), 1240),
-            (AccountId("b".into()), AccountId("a".into()), 1443),
-            (AccountId("b".into()), AccountId("a".into()), 42),
-            (AccountId("a".into()), AccountId("b".into()), 1347),
-            (AccountId("a".into()), AccountId("b".into()), 94),
-            (AccountId("b".into()), AccountId("a".into()), 596),
-            (AccountId("a".into()), AccountId("b".into()), 503),
-        ]
-    );
+    let request = serde_json::to_string(&transactions).unwrap();
+    println!("{}", request);
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rand::SeedableRng;
+
+    #[test]
+    fn like_the_wiki() {
+        let from = AccountId("0x004ec07d2329997267Ec62b4166639513386F32E".into());
+        let to = AccountId("0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e".into());
+        let value = "0xde0b6b3a7640000";
+
+        let transaction = Transaction {
+            from: from,
+            to: to,
+            value: value.into(),
+        };
+
+        let params = PersonalSendTransactionParams(transaction, Password("user"));
+
+        let rpc = vec![
+            PersonalSendTransaction::new(params, 0),
+        ];
+
+        let actual = serde_json::to_string(&rpc).unwrap();
+
+        let expected = r#"[{"jsonrpc":"2.0","method":"personal_sendTransaction","params":[{"from":"0x004ec07d2329997267Ec62b4166639513386F32E","to":"0x00Bd138aBD70e2F00903268F3Db08f2D25677C9e","value":"0xde0b6b3a7640000"},"user"],"id":0}]"#;
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    fn random_transactions() {
+        let mut rng = rand::isaac::Isaac64Rng::from_seed(&[1,2,3,4]);
+
+        let mut accounts = vec![
+            Account {
+                id: AccountId("a".into()),
+                balance: 1000,
+            },
+            Account {
+                id: AccountId("b".into()),
+                balance: 1000,
+            },
+        ];
+
+        let transactions: Vec<_> =
+            TransactionGenerator::new(&mut accounts, &mut rng)
+            .take(10)
+            .collect();
+
+        assert_eq!(
+            transactions,
+            [
+                (AccountId("a".into()), AccountId("b".into()), 594),
+                (AccountId("b".into()), AccountId("a".into()), 1300),
+                (AccountId("b".into()), AccountId("a".into()), 24),
+                (AccountId("a".into()), AccountId("b".into()), 1240),
+                (AccountId("b".into()), AccountId("a".into()), 1443),
+                (AccountId("b".into()), AccountId("a".into()), 42),
+                (AccountId("a".into()), AccountId("b".into()), 1347),
+                (AccountId("a".into()), AccountId("b".into()), 94),
+                (AccountId("b".into()), AccountId("a".into()), 596),
+                (AccountId("a".into()), AccountId("b".into()), 503),
+            ]
+        );
+    }
 }
