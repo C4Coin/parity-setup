@@ -149,9 +149,16 @@ fn main() {
              .long("config")
              .value_name("FILE.json")
              .takes_value(true))
+        .arg(Arg::with_name("output")
+             .long("output")
+             .short("o")
+             .value_name("OUTPUT")
+             .default_value("rpc.json")
+             .takes_value(true))
         .arg(Arg::with_name("transactions")
              .long("transactions")
              .value_name("N")
+             .default_value("10")
              .takes_value(true))
         .arg(Arg::with_name("seed")
              .long("seed")
@@ -160,6 +167,7 @@ fn main() {
         .get_matches();
 
     let config_file = matches.value_of("config").expect("Must provide config file");
+    let output_file = matches.value_of("output").expect("Must provide output file");
 
     let count =
         matches.value_of("transactions")
@@ -189,8 +197,14 @@ fn main() {
         })
         .collect();
 
-    let request = serde_json::to_string(&transactions).unwrap();
-    println!("{}", request);
+    let output = File::create(output_file).expect("Unable to create output file");
+    serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
+
+    println!("RPC body written to {}", output_file);
+    println!("Final Balances:");
+    for account in &accounts {
+        println!("{}:\t{}", account.id.0, account.balance);
+    }
 }
 
 #[cfg(test)]
