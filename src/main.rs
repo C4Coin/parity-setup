@@ -12,6 +12,7 @@ use std::fs::File;
 
 use clap::{Arg, App};
 use serde::Serialize;
+use rand::SeedableRng;
 use rand::distributions::{IndependentSample, Range};
 
 static JSONRPC_VERSION: &str = "2.0";
@@ -152,6 +153,10 @@ fn main() {
              .long("transactions")
              .value_name("N")
              .takes_value(true))
+        .arg(Arg::with_name("seed")
+             .long("seed")
+             .value_name("N")
+             .takes_value(true))
         .get_matches();
 
     let config_file = matches.value_of("config").expect("Must provide config file");
@@ -164,7 +169,13 @@ fn main() {
 
     let (mut accounts, passwords) = parse_config_file(&config_file);
 
-    let mut rng = rand::thread_rng();
+    let mut rng = match matches.value_of("seed") {
+        Some(seed) => {
+            let seed = seed.parse().expect("Unable to parse seed");
+            rand::StdRng::from_seed(&[seed])
+        }
+        None => rand::StdRng::new().expect("Unable to generate RNG"),
+    };
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
@@ -185,7 +196,6 @@ fn main() {
 #[cfg(test)]
 mod test {
     use super::*;
-    use rand::SeedableRng;
 
     #[test]
     fn like_the_wiki() {
