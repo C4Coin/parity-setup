@@ -44,14 +44,6 @@ to generate transaction JSON requests.
     {"jsonrpc":"2.0","result":"0x004ec07d2329997267ec62b4166639513386f32e","id":0}
     ```
 
-- Visit localhost:8081 in your browser
-- Go to Accounts -> Restore and enter:
-  - account recovery phrase: `node1`
-  - account name: `node1`
-  - password: `node1`
-  - password (repeat): `node1`
-- Import
-- Also restore an account with `user` in all the fields instead of `node1`
 - If desired, modify the account balance of each account in `single-node-config.json` under the `accounts` key. The amount should be large.
 - Stop parity
 - Restart with `parity --config single-node.toml`, this now has `node1` configured as a signer
