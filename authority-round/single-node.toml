@@ -1,6 +1,6 @@
 [parity]
-chain = "authority-round-demo-spec.json"
-base_path = "/tmp/parity1"
+chain = "chain-spec.json"
+base_path = "single-node"
 
 [network]
 port = 30301
@@ -19,7 +19,7 @@ port = 8081
 disable = true
 
 [account]
-password = ["node.pwds"]
+password = ["../node.pwds"]
 
 [mining]
 engine_signer = "0x00Aa39d30F0D20FF03a22cCfc30B7EfbFca597C2"
