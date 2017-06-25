@@ -16,6 +16,9 @@ for i in $(seq $start $end); do
 done
 
 for i in $(seq $start $end); do
-    cat "block-$i.json" | \
-        jq -r '[.result.timestamp, (.result.transactions | length)] | @csv'
+    hex_timestamp=$(jq -r '.result.timestamp' "block-$i.json")
+    timestamp=$(printf '%d\n' $hex_timestamp)
+    n_transactions=$(jq -r '.result.transactions | length' "block-$i.json")
+
+    echo "$timestamp,$n_transactions"
 done
