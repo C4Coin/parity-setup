@@ -80,3 +80,40 @@ to generate transaction JSON requests.
     ```
     curl --data '{"method":"eth_getBlockByNumber","params":["latest",true],"id":1,"jsonrpc":"2.0"}' -H "Content-Type: application/json" -X POST localhost:8541
     ```
+
+
+# Generating RPC requests
+
+```
+RPC generator
+
+USAGE:
+    parity-rpc-generator [OPTIONS]
+
+FLAGS:
+    -h, --help       Prints help information
+    -V, --version    Prints version information
+
+OPTIONS:
+        --config <FILE.json>
+    -o, --output <OUTPUT>        [default: rpc.json]
+        --seed <N>
+        --transactions <N>       [default: 10]
+```
+
+## Config JSON example
+
+```json
+[
+  {
+    "id": "alpha",
+    "balance": "1000000",
+    "password": "hunter2"
+  },
+  {
+    "id": "beta",
+    "balance": "1",
+    "password": "qwerty"
+  }
+]
+```
