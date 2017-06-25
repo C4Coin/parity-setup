@@ -12,8 +12,7 @@ the Ouroboros protocol in a variety of situations for experimental setup.
 
 ## Parity RPC generator
 
-You will also need to check out and `cargo build` the
-[parity-rpc-generator](https://github.com/integer32llc/parity-rpc-generator), which makes it easier
+You will also need to `cargo build` the RPC, which makes it easier
 to generate transaction JSON requests.
 
 ## Single node setup
@@ -47,8 +46,7 @@ to generate transaction JSON requests.
 - If desired, modify the account balance of each account in `single-node-config.json` under the `accounts` key. The amount should be large.
 - Stop parity
 - Restart with `parity --config single-node.toml`, this now has `node1` configured as a signer
-- Create some transactions to send by running the
-[parity-rpc-generator](https://github.com/integer32llc/parity-rpc-generator) with the config file `single-node-rpc-generator-config.json`. The balances in `single-node-rpc-generator-config.json`  are the initial amounts available to transfer; these amounts need to fit in a `u64`. Optionally specify the number of transactions to generate:
+- Create some transactions to send by running theRPC generator with the config file `single-node-rpc-generator-config.json`. The balances in `single-node-rpc-generator-config.json`  are the initial amounts available to transfer; these amounts need to fit in a `u64`. Optionally specify the number of transactions to generate:
 
     ```
     parity-rpc-generator --config single-node-rpc-generator-config.json --transactions 50
@@ -82,7 +80,9 @@ to generate transaction JSON requests.
     ```
 
 
-# Generating RPC requests
+## Generating RPC requests
+
+### Running
 
 ```
 RPC generator
@@ -101,7 +101,7 @@ OPTIONS:
         --transactions <N>       [default: 10]
 ```
 
-## Config JSON example
+### Config JSON example
 
 ```json
 [
