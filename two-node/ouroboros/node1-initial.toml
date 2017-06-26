@@ -14,3 +14,6 @@ port = 8181
 
 [dapps]
 port = 8081
+
+[ipc]
+disable = true

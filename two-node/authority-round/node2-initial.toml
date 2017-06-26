@@ -17,6 +17,3 @@ port = 8082
 
 [ipc]
 disable = true
-
-[account]
-password = ["../../node.pwds"]
