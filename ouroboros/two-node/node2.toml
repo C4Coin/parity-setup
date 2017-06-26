@@ -1,19 +1,19 @@
 [parity]
-chain = "ouroboros-demo-spec.json"
-base_path = "/tmp/parity1"
+chain = "chain-spec.json"
+base_path = "node2"
 
 [network]
-port = 30301
+port = 30302
 
 [rpc]
-port = 8541
+port = 8542
 apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"]
 
 [ui]
-port = 8181
+port = 8182
 
 [dapps]
-port = 8081
+port = 8082
 
 [ipc]
 disable = true
@@ -22,6 +22,6 @@ disable = true
 password = ["node.pwds"]
 
 [mining]
-engine_signer = "0x00Aa39d30F0D20FF03a22cCfc30B7EfbFca597C2"
+engine_signer = "0x00aa39d30f0d20ff03a22ccfc30b7efbfca597c2"
 reseal_on_txs = "none"
 usd_per_tx = "0"
