@@ -1,0 +1,19 @@
+[parity]
+chain = "chain-spec.json"
+base_path = "node"
+
+[network]
+port = 30300
+
+[rpc]
+port = 8540
+apis = ["web3", "eth", "net", "personal", "parity", "parity_set", "traces", "rpc", "parity_accounts"]
+
+[ui]
+port = 8180
+
+[dapps]
+port = 8080
+
+[ipc]
+disable = true
