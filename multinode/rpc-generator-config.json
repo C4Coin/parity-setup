@@ -1,0 +1,13 @@
+[
+    {
+        "id": "0x00d695cd9b0ff4edc8ce55b493aec495b597e235",
+        "balance": "1000000",
+        "password": "user1"
+    },
+    {
+        "id": "0x001ca0bb54fcc1d736ccd820f14316dedaafd772",
+        "balance": "1000000",
+        "password": "user2"
+
+    }
+]
