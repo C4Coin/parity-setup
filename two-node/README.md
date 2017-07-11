@@ -8,7 +8,7 @@ user1 = 0x00d695cd9b0ff4edc8ce55b493aec495b597e235
 node2 = 0x002e28950558fbede1a9675cb113f0bd20912019
 user2 = 0x001ca0bb54fcc1d736ccd820f14316dedaafd772
 
-Recover the user accounts on both nodes:
+Recover the node account on each node, and the user accounts on both nodes:
 
 ```
 curl --data '{"jsonrpc":"2.0","method":"parity_newAccountFromPhrase","params":["node1", "node1"],"id":0}' -H "Content-Type: application/json" -X POST localhost:8541
