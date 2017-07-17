@@ -62,3 +62,55 @@ cargo run -- --config rpc-generator-config.json --transactions 1000 -o rpc-part2
 ```
 cargo run -- --config rpc-generator-config.json --transactions 1000 -o rpc-part1.json
 ```
+
+# Change in stake
+
+Two nodes (node1, node2), no user accounts
+
+password is the same as the username
+
+node1 = 0x00aa39d30f0d20ff03a22ccfc30b7efbfca597c2
+node2 = 0x002e28950558fbede1a9675cb113f0bd20912019
+
+From within the `two-node/ouroboros` directory, start up the nodes with `node1-initial.toml` and `node2-initial.toml`:
+
+```
+cd two-node/ouroboros
+parity --config node1-initial.toml
+```
+
+```
+cd two-node/ouroboros
+parity --config node2-initial.toml
+```
+
+Recover the node account on each node:
+
+```
+curl --data '{"jsonrpc":"2.0","method":"parity_newAccountFromPhrase","params":["node1", "node1"],"id":0}' -H "Content-Type: application/json" -X POST localhost:8541
+
+curl --data '{"jsonrpc":"2.0","method":"parity_newAccountFromPhrase","params":["node2", "node2"],"id":0}' -H "Content-Type: application/json" -X POST localhost:8542
+```
+
+Start up the nodes with `node1.toml` and `node2.toml`, then tell them about each other:
+
+```
+node1_enode=$(curl --data '{"jsonrpc":"2.0","method":"parity_enode","params":[],"id":0}' -H "Content-Type: application/json" -X POST localhost:8541 | jq -r '.result')
+curl --data "{\"jsonrpc\":\"2.0\",\"method\":\"parity_addReservedPeer\",\"params\":[\"${node1_enode}\"],\"id\":0}" -H "Content-Type: application/json" -X POST localhost:8542
+```
+
+## rpc-from-user
+
+Extract only the transactions from node1 to node2 in order to change stake from being balanced to being skewed towards node2
+
+```
+cargo run -- --config rpc-generator-stake-change.json --transactions 2000
+jq -c 'map(select(.params[0].from != "0x002e28950558fbede1a9675cb113f0bd20912019"))' rpc.json > rpc-from-node1.json
+jq -c 'map(select(.params[0].from != "0x00aa39d30f0d20ff03a22ccfc30b7efbfca597c2"))' rpc.json > rpc-from-node2.json
+```
+
+Send those transactions to node1:
+
+```
+curl --data @rpc-from-node1.json -H "Content-Type: application/json" -X POST localhost:8541 & curl --data @rpc-from-node2.json -H "Content-Type: application/json" -X POST localhost:8542 &
+```

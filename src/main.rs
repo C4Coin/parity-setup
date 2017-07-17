@@ -61,7 +61,8 @@ struct Account {
 }
 
 struct TransactionGenerator<'a, R> {
-    accounts: &'a mut [Account],
+    winner: &'a mut Account,
+    loser: &'a mut Account,
     range: Range<usize>,
     rng: R,
 }
@@ -69,8 +70,10 @@ struct TransactionGenerator<'a, R> {
 impl<'a, R> TransactionGenerator<'a, R> {
     fn new(accounts: &'a mut [Account], rng: R) -> Self {
         let len = accounts.len();
+        let (left, right) = accounts.split_at_mut(1);
         Self {
-            accounts,
+            winner: &mut left[0],
+            loser: &mut right[0],
             range: Range::new(0, len),
             rng,
         }
@@ -85,29 +88,19 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            let a_idx = self.range.ind_sample(&mut self.rng);
-            let b_idx = self.range.ind_sample(&mut self.rng);
+            if self.loser.balance < 1000 { return None }
+            let max = self.loser.balance / 100;
+            println!("max = {}", max);
+            let money = self.rng.gen_range(0, max);
 
-            if a_idx == b_idx { continue }
-
-            let lo_idx = min(a_idx, b_idx);
-            let hi_idx = max(a_idx, b_idx);
-
-            let (left, right) = self.accounts.split_at_mut(hi_idx);
-
-            let a = &mut left[lo_idx];
-            let b = &mut right[0];
-
-            let (src, dest) = if self.rng.gen() { (a, b) } else { (b, a) };
-
-            if src.balance == 0 { continue }
-            let money = self.rng.gen_range(0, src.balance);
             if money == 0 { continue }
 
-            src.balance -= money;
-            dest.balance += money;
+            self.loser.balance -= money;
+            self.winner.balance += money;
 
-            return Some((src.id.clone(), dest.id.clone(), money));
+            println!("transfer {}; balances = {}, {}", money, self.loser.balance, self.winner.balance);
+
+            return Some((self.loser.id.clone(), self.winner.id.clone(), money));
         }
     }
 }
@@ -170,7 +163,7 @@ fn main() {
     let config_file = matches.value_of("config").expect("Must provide config file");
     let output_file = matches.value_of("output").expect("Must provide output file");
 
-    let count =
+    let count: usize =
         matches.value_of("transactions")
         .unwrap()
         .parse()
@@ -188,7 +181,6 @@ fn main() {
 
     let transactions: Vec<_> =
         TransactionGenerator::new(&mut accounts, &mut rng)
-        .take(count)
         .enumerate()
         .map(|(id, (from, to, value))| {
             let password = passwords[&from].clone();
