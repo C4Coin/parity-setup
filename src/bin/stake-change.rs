@@ -83,8 +83,8 @@ where
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
-            if self.loser.balance < 1000 { return None }
-            let max = self.loser.balance / 100;
+            if self.loser.balance < 49_000 { return None }
+            let max = self.loser.balance / 10000;
             let money = self.rng.gen_range(0, max);
 
             if money == 0 { continue }
