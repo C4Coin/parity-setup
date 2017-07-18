@@ -6,6 +6,7 @@
                 "gasLimitBoundDivisor": "0x400",
                 "stepDuration": "5",
                 "securityParameterK": "60",
+                "networkWideStartTime": "0x596d1d34",
                 "validators" : {
                     "list": [
                         "0x00aa39d30f0d20ff03a22ccfc30b7efbfca597c2",
@@ -24,7 +25,6 @@
         "seal": {
             "ouroboros": {
                 "step": "0x0",
-                "network_wide_start_time": "0x596d1d34",
                 "signature": "0x0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
             }
         },
