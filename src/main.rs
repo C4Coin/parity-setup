@@ -111,7 +111,6 @@ fn main() {
         .arg(Arg::with_name("transactions")
              .long("transactions")
              .value_name("N")
-             .default_value("10")
              .takes_value(true))
         .arg(Arg::with_name("seed")
              .long("seed")
@@ -123,11 +122,8 @@ fn main() {
     let output_file = matches.value_of("output").expect("Must provide output file");
     let generator_type = matches.value_of("generator-type").unwrap();
 
-    let count =
-        matches.value_of("transactions")
-        .unwrap()
-        .parse()
-        .expect("transactions must be a number");
+    let count = matches.value_of("transactions")
+        .map(|v| v.parse().expect("transactions must be a number"));
 
     let (mut accounts, passwords) = parse_config_file(&config_file);
 
@@ -151,7 +147,7 @@ fn main() {
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
 
     println!("RPC body written to {}", output_file);
-    println!("Final balances after {} transactions:", count);
+    println!("Final balances after {} transactions:", transactions.len());
     for account in &accounts {
         println!("{}:\t{}", account.id.0, account.balance);
     }
@@ -161,7 +157,7 @@ fn generate_transactions<R>(
     generator_type: &str,
     accounts: &mut [Account],
     mut rng: R,
-    count: usize,
+    count: Option<usize>,
     passwords: &HashMap<AccountId, Password>,
 ) -> Vec<PersonalSendTransaction>
 where
@@ -177,8 +173,12 @@ where
         _ => panic!("Unknown generator type {}", generator_type),
     };
 
+    let generator = match count {
+        Some(count) => Box::new(generator.take(count)),
+        None => generator,
+    };
+
     generator
-        .take(count)
         .enumerate()
         .map(|(id, (from, to, value))| {
             let password = passwords[&from].clone();
