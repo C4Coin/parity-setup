@@ -1,3 +1,5 @@
+printf "%x" $(($(date +%s) + 300))
+
 Two nodes (node1, node2)
 
 password is the same as the username
