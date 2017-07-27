@@ -7,13 +7,13 @@ extern crate serde_json;
 extern crate rand;
 
 use std::collections::HashMap;
-use std::cmp::{min, max};
 use std::fs::File;
 
 use clap::{Arg, App};
 use serde::Serialize;
 use rand::{Rng, SeedableRng};
-use rand::distributions::{IndependentSample, Range};
+
+mod generator;
 
 static JSONRPC_VERSION: &str = "2.0";
 static METHOD_NAME: &str = "personal_sendTransaction";
@@ -43,7 +43,7 @@ impl PersonalSendTransaction {
 struct Password(String);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
-struct AccountId(String);
+pub struct AccountId(String);
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
 struct PersonalSendTransactionParams(Transaction, Password);
@@ -55,64 +55,10 @@ struct Transaction {
     value: String,
 }
 
-struct Account {
+pub struct Account {
     id: AccountId,
     balance: u64,
 }
-
-struct TransactionGenerator<'a, R> {
-    accounts: &'a mut [Account],
-    range: Range<usize>,
-    rng: R,
-}
-
-impl<'a, R> TransactionGenerator<'a, R> {
-    fn new(accounts: &'a mut [Account], rng: R) -> Self {
-        let len = accounts.len();
-        Self {
-            accounts,
-            range: Range::new(0, len),
-            rng,
-        }
-    }
-}
-
-impl<'a, R> Iterator for TransactionGenerator<'a, R>
-where
-    R: rand::Rng,
-{
-    type Item = (AccountId, AccountId, u64);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            let a_idx = self.range.ind_sample(&mut self.rng);
-            let b_idx = self.range.ind_sample(&mut self.rng);
-
-            if a_idx == b_idx { continue }
-
-            let lo_idx = min(a_idx, b_idx);
-            let hi_idx = max(a_idx, b_idx);
-
-            let (left, right) = self.accounts.split_at_mut(hi_idx);
-
-            let a = &mut left[lo_idx];
-            let b = &mut right[0];
-
-            let (src, dest) = if self.rng.gen() { (a, b) } else { (b, a) };
-
-            if src.balance == 0 { continue }
-            let money = self.rng.gen_range(0, src.balance);
-            if money == 0 { continue }
-
-            src.balance -= money;
-            dest.balance += money;
-
-            return Some((src.id.clone(), dest.id.clone(), money));
-        }
-    }
-}
-
-//struct StringNumber(String)
 
 #[derive(Debug, Clone, Deserialize)]
 struct AccountConfig {
@@ -187,7 +133,7 @@ fn main() {
     println!("Used seed {}", seed);
 
     let transactions: Vec<_> =
-        TransactionGenerator::new(&mut accounts, &mut rng)
+        generator::RandomTransactions::new(&mut accounts, &mut rng)
         .take(count)
         .enumerate()
         .map(|(id, (from, to, value))| {
