@@ -56,3 +56,44 @@ where
         }
     }
 }
+
+/// Slowly moves all the money from the winner (first account) to the
+/// loser (second account)
+pub struct WinnerLoser<'a, R> {
+    winner: &'a mut Account,
+    loser: &'a mut Account,
+    rng: R,
+}
+
+impl<'a, R> WinnerLoser<'a, R> {
+    pub fn new(accounts: &'a mut [Account], rng: R) -> Self {
+        let (left, right) = accounts.split_at_mut(1);
+        Self {
+            winner: &mut left[0],
+            loser: &mut right[0],
+            rng,
+        }
+    }
+}
+
+impl<'a, R> Iterator for WinnerLoser<'a, R>
+where
+    R: rand::Rng,
+{
+    type Item = (AccountId, AccountId, u64);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        loop {
+            if self.loser.balance < 49_000 { return None }
+            let max = self.loser.balance / 10000;
+            let money = self.rng.gen_range(0, max);
+
+            if money == 0 { continue }
+
+            self.loser.balance -= money;
+            self.winner.balance += money;
+
+            return Some((self.loser.id.clone(), self.winner.id.clone(), money));
+        }
+    }
+}

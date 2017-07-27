@@ -102,6 +102,12 @@ fn main() {
              .value_name("OUTPUT")
              .default_value("rpc.json")
              .takes_value(true))
+        .arg(Arg::with_name("generator-type")
+             .long("generator-type")
+             .short("g")
+             .value_name("GENERATOR")
+             .default_value("random")
+             .takes_value(true))
         .arg(Arg::with_name("transactions")
              .long("transactions")
              .value_name("N")
@@ -115,6 +121,7 @@ fn main() {
 
     let config_file = matches.value_of("config").expect("Must provide config file");
     let output_file = matches.value_of("output").expect("Must provide output file");
+    let generator_type = matches.value_of("generator-type").unwrap();
 
     let count =
         matches.value_of("transactions")
@@ -129,20 +136,16 @@ fn main() {
         .map(|s| s.parse().expect("Unable to parse seed"))
         .unwrap_or_else(|| rand::thread_rng().gen());
 
-    let mut rng = rand::StdRng::from_seed(&[seed]);
+    let rng = rand::StdRng::from_seed(&[seed]);
     println!("Used seed {}", seed);
 
-    let transactions: Vec<_> =
-        generator::RandomTransactions::new(&mut accounts, &mut rng)
-        .take(count)
-        .enumerate()
-        .map(|(id, (from, to, value))| {
-            let password = passwords[&from].clone();
-            let transaction = Transaction { from, to, value: format!("0x{:x}", value) };
-            let params = PersonalSendTransactionParams(transaction, password);
-            PersonalSendTransaction::new(params, id)
-        })
-        .collect();
+    let transactions: Vec<_> = generate_transactions(
+        generator_type,
+        &mut accounts,
+        rng,
+        count,
+        &passwords,
+    );
 
     let output = File::create(output_file).expect("Unable to create output file");
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
@@ -152,6 +155,38 @@ fn main() {
     for account in &accounts {
         println!("{}:\t{}", account.id.0, account.balance);
     }
+}
+
+fn generate_transactions<R>(
+    generator_type: &str,
+    accounts: &mut [Account],
+    mut rng: R,
+    count: usize,
+    passwords: &HashMap<AccountId, Password>,
+) -> Vec<PersonalSendTransaction>
+where
+    R: rand::Rng,
+{
+    let generator: Box<Iterator<Item = _>> = match generator_type {
+        "random" => {
+            Box::new(generator::RandomTransactions::new(accounts, &mut rng))
+        }
+        "winner-loser" => {
+            Box::new(generator::WinnerLoser::new(accounts, &mut rng))
+        }
+        _ => panic!("Unknown generator type {}", generator_type),
+    };
+
+    generator
+        .take(count)
+        .enumerate()
+        .map(|(id, (from, to, value))| {
+            let password = passwords[&from].clone();
+            let transaction = Transaction { from, to, value: format!("0x{:x}", value) };
+            let params = PersonalSendTransactionParams(transaction, password);
+            PersonalSendTransaction::new(params, id)
+        })
+        .collect()
 }
 
 #[cfg(test)]
