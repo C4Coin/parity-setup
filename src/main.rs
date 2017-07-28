@@ -71,7 +71,11 @@ struct AccountConfig {
 #[derive(Debug, Clone, Deserialize)]
 struct ConfigFile {
     generator: Option<String>,
-    count: Option<usize>,
+    count: Option<usize>, // TODO: match this with the config flag name
+    #[serde(rename = "filter-from")]
+    filter_from: Option<String>,
+    #[serde(rename = "chunk-size")]
+    chunk_size: Option<usize>,
     seed: Option<usize>,
     accounts: Vec<AccountConfig>,
 }
@@ -80,6 +84,8 @@ struct ConfigFile {
 struct Config {
     generator: Option<String>,
     count: Option<usize>,
+    filter_from: Option<String>,
+    chunk_size: Option<usize>,
     seed: Option<usize>,
     accounts: Vec<Account>,
     passwords: HashMap<AccountId, Password>,
@@ -91,9 +97,9 @@ fn parse_config_file(config_file: &str) -> Config {
         serde_json::from_reader(config_file).expect("Unable to parse config file");
 
     let generator = config.generator;
-
     let count = config.count;
-
+    let filter_from = config.filter_from;
+    let chunk_size = config.chunk_size;
     let seed = config.seed;
 
     let passwords =
@@ -111,7 +117,7 @@ fn parse_config_file(config_file: &str) -> Config {
         })
         .collect();
 
-    Config { generator, count, seed, accounts, passwords }
+    Config { generator, count, filter_from, chunk_size, seed, accounts, passwords }
 }
 
 fn main() {
@@ -135,6 +141,14 @@ fn main() {
              .long("transactions")
              .value_name("N")
              .takes_value(true))
+        .arg(Arg::with_name("filter-from")
+             .long("filter-from")
+             .value_name("ADDRESS")
+             .takes_value(true))
+        .arg(Arg::with_name("chunk-size")
+             .long("chunk-size")
+             .value_name("N")
+             .takes_value(true))
         .arg(Arg::with_name("seed")
              .long("seed")
              .value_name("N")
@@ -152,13 +166,18 @@ fn main() {
     let seed_arg =
         matches.value_of("seed")
         .map(|s| s.parse().expect("Unable to parse seed"));
+    let filter_arg = matches.value_of("filter-from").map(Into::into);
+    let chunks_arg =
+        matches.value_of("chunk-size")
+        .map(|s| s.parse().expect("Unable to parse chunk size"));
 
     config.generator = generator_arg.or(config.generator);
     config.count = count_arg.or(config.count);
     config.seed = seed_arg.or(config.seed);
+    config.filter_from = filter_arg.or(config.filter_from);
+    config.chunk_size = chunks_arg.or(config.chunk_size);
 
     let generator = config.generator.unwrap_or("random".into());
-
     let seed = config.seed.unwrap_or_else(|| rand::thread_rng().gen());
 
     let rng = rand::StdRng::from_seed(&[seed]);
@@ -169,13 +188,21 @@ fn main() {
         &mut config.accounts,
         rng,
         config.count,
+        config.filter_from.map(AccountId),
         &config.passwords,
     );
 
-    let output = File::create(output_file).expect("Unable to create output file");
-    serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
+    let chunk_size = config.chunk_size.unwrap_or_else(|| transactions.len());
 
-    println!("RPC body written to {}", output_file);
+    for (i, chunk) in transactions.chunks(chunk_size).enumerate() {
+        let output_file = format!("{}.{}", output_file, i);
+        let transactions = chunk;
+
+        let output = File::create(&output_file).expect("Unable to create output file");
+        serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
+        println!("RPC body written to {}", output_file);
+    }
+
     println!("Final balances after {} transactions using the {} generator:", transactions.len(), generator);
     for account in &config.accounts {
         println!("{}:\t{}", account.id.0, account.balance);
@@ -187,6 +214,7 @@ fn generate_transactions<R>(
     accounts: &mut [Account],
     mut rng: R,
     count: Option<usize>,
+    filter_from: Option<AccountId>,
     passwords: &HashMap<AccountId, Password>,
 ) -> Vec<PersonalSendTransaction>
 where
@@ -204,6 +232,11 @@ where
 
     let generator = match count {
         Some(count) => Box::new(generator.take(count)),
+        None => generator,
+    };
+
+    let generator = match filter_from {
+        Some(filter_from) => Box::new(generator.filter(move |&(ref from, _, _)| from == &filter_from)),
         None => generator,
     };
 
