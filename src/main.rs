@@ -55,6 +55,7 @@ struct Transaction {
     value: String,
 }
 
+#[derive(Debug)]
 pub struct Account {
     id: AccountId,
     balance: u64,
@@ -67,18 +68,41 @@ struct AccountConfig {
     password: Password,
 }
 
-fn parse_config_file(config_file: &str) -> (Vec<Account>, HashMap<AccountId, Password>) {
+#[derive(Debug, Clone, Deserialize)]
+struct ConfigFile {
+    generator: Option<String>,
+    count: Option<usize>,
+    seed: Option<usize>,
+    accounts: Vec<AccountConfig>,
+}
+
+#[derive(Debug)]
+struct Config {
+    generator: Option<String>,
+    count: Option<usize>,
+    seed: Option<usize>,
+    accounts: Vec<Account>,
+    passwords: HashMap<AccountId, Password>,
+}
+
+fn parse_config_file(config_file: &str) -> Config {
     let config_file = File::open(config_file).expect("Config file not found");
-    let config: Vec<AccountConfig> =
+    let config: ConfigFile =
         serde_json::from_reader(config_file).expect("Unable to parse config file");
 
+    let generator = config.generator;
+
+    let count = config.count;
+
+    let seed = config.seed;
+
     let passwords =
-        config.iter()
+        config.accounts.iter()
         .map(|conf| (conf.id.clone(), conf.password.clone()))
         .collect();
 
     let accounts =
-        config.into_iter()
+        config.accounts.into_iter()
         .map(|conf| {
             Account {
                 id: conf.id,
@@ -87,7 +111,7 @@ fn parse_config_file(config_file: &str) -> (Vec<Account>, HashMap<AccountId, Pas
         })
         .collect();
 
-    (accounts, passwords)
+    Config { generator, count, seed, accounts, passwords }
 }
 
 fn main() {
@@ -102,11 +126,10 @@ fn main() {
              .value_name("OUTPUT")
              .default_value("rpc.json")
              .takes_value(true))
-        .arg(Arg::with_name("generator-type")
-             .long("generator-type")
+        .arg(Arg::with_name("generator")
+             .long("generator")
              .short("g")
              .value_name("GENERATOR")
-             .default_value("random")
              .takes_value(true))
         .arg(Arg::with_name("transactions")
              .long("transactions")
@@ -120,35 +143,41 @@ fn main() {
 
     let config_file = matches.value_of("config").expect("Must provide config file");
     let output_file = matches.value_of("output").expect("Must provide output file");
-    let generator_type = matches.value_of("generator-type").unwrap();
 
-    let count = matches.value_of("transactions")
+    let mut config = parse_config_file(&config_file);
+
+    let generator_arg = matches.value_of("generator").map(Into::into);
+    let count_arg = matches.value_of("transactions")
         .map(|v| v.parse().expect("transactions must be a number"));
-
-    let (mut accounts, passwords) = parse_config_file(&config_file);
-
-    let seed =
+    let seed_arg =
         matches.value_of("seed")
-        .map(|s| s.parse().expect("Unable to parse seed"))
-        .unwrap_or_else(|| rand::thread_rng().gen());
+        .map(|s| s.parse().expect("Unable to parse seed"));
+
+    config.generator = generator_arg.or(config.generator);
+    config.count = count_arg.or(config.count);
+    config.seed = seed_arg.or(config.seed);
+
+    let generator = config.generator.unwrap_or("random".into());
+
+    let seed = config.seed.unwrap_or_else(|| rand::thread_rng().gen());
 
     let rng = rand::StdRng::from_seed(&[seed]);
     println!("Used seed {}", seed);
 
     let transactions: Vec<_> = generate_transactions(
-        generator_type,
-        &mut accounts,
+        &generator,
+        &mut config.accounts,
         rng,
-        count,
-        &passwords,
+        config.count,
+        &config.passwords,
     );
 
     let output = File::create(output_file).expect("Unable to create output file");
     serde_json::to_writer(output, &transactions).expect("Unable to convert to JSON");
 
     println!("RPC body written to {}", output_file);
-    println!("Final balances after {} transactions:", transactions.len());
-    for account in &accounts {
+    println!("Final balances after {} transactions using the {} generator:", transactions.len(), generator);
+    for account in &config.accounts {
         println!("{}:\t{}", account.id.0, account.balance);
     }
 }
