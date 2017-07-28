@@ -1,13 +1,17 @@
-[
+{
+  "generator": "random",
+  "count": 100000,
+  "chunk-size": 1000,
+  "accounts": [
     {
-        "id": "0x00d695cd9b0ff4edc8ce55b493aec495b597e235",
-        "balance": "1000000",
-        "password": "user1"
+      "id": "0x00bd138abd70e2f00903268f3db08f2d25677c9e",
+      "balance": "1000000",
+      "password": "node0"
     },
     {
-        "id": "0x001ca0bb54fcc1d736ccd820f14316dedaafd772",
-        "balance": "1000000",
-        "password": "user2"
-
+      "id": "0x00aa39d30f0d20ff03a22ccfc30b7efbfca597c2",
+      "balance": "1000000",
+      "password": "node1"
     }
-]
+  ]
+}
